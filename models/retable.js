@@ -15,7 +15,8 @@ const accessDB = async () => {
             //Create New Workscape-->Project-->Table
             retable.workspace_id = await createWorkspace();
             retable.project_id = await createProject(retable.workspace_id);
-            retable.table_id = await createTable(retable.project_id);
+            await createTable(retable.project_id);
+            retable.table_id = await getTable(retable.project_id);
         }
         //console.log(retable)
         return retable;
@@ -126,4 +127,4 @@ async function getTable(project_id) {
 }
 
 
-module.exports = {accessDB};
+module.exports = { accessDB };
