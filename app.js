@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 const databaseRoutes = require('./routes/databaseRoutes')
 const productRoutes = require('./routes/productRoutes')
-require('dotenv').config();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
