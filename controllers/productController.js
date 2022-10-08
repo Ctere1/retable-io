@@ -48,8 +48,14 @@ const createProduct = async (req, res) => {
                 }]
             }
         })
-
-        res.status(200).json(`Product: '${id}' created.`);
+        let product = {};
+        product.name = name;
+        product.id = id;
+        product.inventory = inventory;
+        product.updated_at = time;
+        product.created_at = time;
+        
+        res.status(200).json(product);
     } catch (error) {
         console.log(error);
         res.status(400).json(error.message);
@@ -110,7 +116,7 @@ const getProducts = async (req, res) => {
             }
         });
 
-        res.json({ count: count, products: products })
+        res.status(200).json({ count: count, products: products })
     } catch (error) {
         console.log(error);
         res.status(400).json(error.message);
@@ -125,7 +131,7 @@ const getProduct = async (req, res) => {
     exists = await checkExist(database, productId);
 
     if (exists.id != '') {
-        res.json(exists)
+        res.status(200).json(exists)
     } else {
         res.status(400).json('Could not found the product with productId: ' + productId);
     }

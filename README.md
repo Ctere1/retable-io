@@ -48,3 +48,5 @@ This software uses the following open source packages:
 - [Node.js](https://nodejs.org/)
 - [Dotenv](https://github.com/motdotla/dotenv)
 - [Axios](https://github.com/axios/axios)
+- [Jest](https://jestjs.io/)
+- [Supertest](https://github.com/visionmedia/supertest)
