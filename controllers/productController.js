@@ -9,6 +9,7 @@ const createProduct = async (req, res) => {
         const database = await accessDB();
         // console.log(database);
         const { name, id, inventory } = req.body;
+        const time = getTime();
 
         //Check ID (do not create duplicate product with same ID)
         exists = await checkExist(database, id);
@@ -40,13 +41,76 @@ const createProduct = async (req, res) => {
                     columns: [
                         { column_id: columnsArr['Name'], cell_data: name },
                         { column_id: columnsArr['Id'], cell_data: id },
-                        { column_id: columnsArr['Inventory'], cell_data: inventory }
+                        { column_id: columnsArr['Inventory'], cell_data: inventory },
+                        { column_id: columnsArr['Updated_at'], cell_data: time },
+                        { column_id: columnsArr['Created_at'], cell_data: time }
                     ]
                 }]
             }
         })
 
         res.status(200).json(`Product: '${id}' created.`);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json(error.message);
+    }
+}
+
+//Get products
+const getProducts = async (req, res) => {
+    try {
+        const database = await accessDB();
+
+        //GET the retable and grab the column ids
+        let response = await axios(base_url + '/retable/' + database.table_id, {
+            method: 'GET',
+            headers: {
+                'ApiKey': process.env.API_KEY
+            }
+        })
+        let columnsArr = [];
+        response.data.data.columns.forEach(element => {
+            columnsArr[element.column_id] = element.title;
+        });
+
+        //Get row values.
+        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data', {
+            method: 'GET',
+            headers: {
+                'ApiKey': process.env.API_KEY
+            }
+        })
+
+        let count = 0;
+        let products = [];
+        response2.data.data.rows.forEach(element => {
+            let product = { name: '', id: '', inventory: '', updated_at: '', created_at: '', };
+            if (element.row_id !== 1) {
+                element.columns.forEach(column => {
+                    switch (columnsArr[column.column_id]) {
+                        case 'Id':
+                            product.id = column.cell_value;
+                            break;
+                        case 'Name':
+                            product.name = column.cell_value
+                            break;
+                        case 'Inventory':
+                            product.inventory = column.cell_value
+                            break;
+                        case 'Updated_at':
+                            product.updated_at = column.cell_value
+                            break;
+                        case 'Created_at':
+                            product.created_at = column.cell_value
+                            break;
+                    }
+                });
+                count++;
+                products.push(product);
+            }
+        });
+
+        res.json({ count: count, products: products })
     } catch (error) {
         console.log(error);
         res.status(400).json(error.message);
@@ -72,6 +136,7 @@ const updateProduct = async (req, res) => {
     try {
         const database = await accessDB();
         const { name, id, inventory } = req.body;
+        const time = getTime();
 
         product = await checkExist(database, id, true);
 
@@ -98,7 +163,8 @@ const updateProduct = async (req, res) => {
                     row_id: product.row_id,
                     columns: [
                         { column_id: columnsArr['Name'], update_cell_data: name },
-                        { column_id: columnsArr['Inventory'], update_cell_data: inventory }
+                        { column_id: columnsArr['Inventory'], update_cell_data: inventory },
+                        { column_id: columnsArr['Updated_at'], update_cell_data: time }
                     ]
                 }]
             }
@@ -161,7 +227,7 @@ async function checkExist(database, productId, getRowId = false) {
         }
     })
 
-    let product = { name: '', id: '', inventory: '' };
+    let product = { name: '', id: '', inventory: '', updated_at: '', created_at: '', };
     response2.data.data.rows.forEach(element => {
         element.columns.forEach(column => {
             switch (columnsArr[column.column_id]) {
@@ -179,10 +245,30 @@ async function checkExist(database, productId, getRowId = false) {
                 case 'Inventory':
                     product.inventory = column.cell_value
                     break;
+                case 'Updated_at':
+                    product.updated_at = column.cell_value
+                    break;
+                case 'Created_at':
+                    product.created_at = column.cell_value
+                    break;
             }
         });
     });
     return product;
 }
 
-module.exports = { createProduct, updateProduct, deleteProduct, getProduct }
+function getTime() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    let mm = today.getMonth() + 1; // Months start at 0!
+    let dd = today.getDate();
+    let n = today.toLocaleTimeString();
+
+    if (dd < 10) dd = '0' + dd;
+    if (mm < 10) mm = '0' + mm;
+
+    const formattedToday = dd + '/' + mm + '/' + yyyy + ' ' + n;
+    return formattedToday;
+}
+
+module.exports = { createProduct, updateProduct, deleteProduct, getProduct, getProducts }
