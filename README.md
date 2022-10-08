@@ -13,7 +13,7 @@
 </p>
 
 ## Features
-
+Stock Management API that uses Retable-io (https://www.retable.io/) as database. You can:
 * Create a Product
   - Create a product with unique "id" (mandatory), "name" and "inventory". API does not allow to create duplicate product with same "id".
 * Update a product
@@ -36,6 +36,8 @@ $ git clone https://github.com/Ctere1/retable-io
 $ cd retable-io
 # Install dependencies
 $ npm install
+# Get Retable-io API_KEY
+$ add API_KEY into .env file
 # Run the app
 $ npm start
 ```
