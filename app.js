@@ -1,12 +1,12 @@
 const express = require('express');
 const app = express();
-const databaseRoutes = require('./routes/databaseRoutes')
+
 const productRoutes = require('./routes/productRoutes')
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use('/api/database', databaseRoutes);
+
 app.use('/api/product', productRoutes);
 
 const server = require('http').createServer(app);
