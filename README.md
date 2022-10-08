@@ -39,7 +39,7 @@ $ npm install
 # Run the app
 $ npm start
 ```
-
+Check postman collection for testing.
 ## Credits
 
 This software uses the following open source packages:
