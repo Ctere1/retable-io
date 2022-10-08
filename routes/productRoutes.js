@@ -9,9 +9,9 @@ router.post("/", createProduct)
 router.get("/:productId", getProduct)
 
 //Update Product
-router.post("/update", updateProduct)
+router.put("/", updateProduct)
 
 //Delete Product
-router.delete('/', deleteProduct)
+router.delete('/:productId', deleteProduct)
 
 module.exports = router
