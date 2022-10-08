@@ -67,6 +67,8 @@ describe("Properly updates a product", () => {
         const response = await request(baseURL).put("api/product").send(product);
         expect(response.statusCode).toBe(200);
         expect(response.body).not.toBe(null);
+        expect(response.body.name).toBe('changed');
+        expect(response.body.inventory).toBe(56);
     });
     it("Return product", async () => {
         const response = await request(baseURL).get("api/product/test_sku");
