@@ -104,7 +104,14 @@ async function createTable(project_id) {
         headers: {
             'ApiKey': process.env.API_KEY
         },
-        data: { columns: [{ "title": "Id", "type": "text" }, { "title": "Inventory", "type": "number" }, { "title": "Updated_at", "type": "calender" }, { "title": "Created_at", "type": "calender" }] }
+        data: {
+            columns: [
+                { "title": "Id", "type": "text" },
+                { "title": "Inventory", "type": "number" },
+                { "title": "Updated_at", "type": "text" },
+                { "title": "Created_at", "type": "text" }
+            ]
+        }
     })
     console.log('Columns: created');
 }
