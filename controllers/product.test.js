@@ -43,7 +43,7 @@ describe("Properly deletes product", () => {
     });
     it("Check product not exists", async () => {
         const response = await request(baseURL).get("api/product/test_sku");
-        expect(response.statusCode).toBe(400);
+        expect(response.statusCode).toBe(404);
     });
 });
 

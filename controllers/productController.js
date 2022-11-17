@@ -1,13 +1,12 @@
-const { accessDB } = require('../models/retable')
 const base_url = "https://api.retable.io/v1/public";
 const axios = require('axios');
+axios.defaults.headers.common['ApiKey'] = process.env.API_KEY;
 require('dotenv').config();
 
 //Create product with unique Id
 const createProduct = async (req, res) => {
     try {
-        const database = await accessDB();
-        // console.log(database);
+        const database = req.app.locals.database;
         const { name, id, inventory } = req.body;
         const time = getTime();
 
@@ -19,23 +18,15 @@ const createProduct = async (req, res) => {
         }
 
         //GET the retable and grab the column ids
-        let response = await axios(base_url + '/retable/' + database.table_id, {
-            method: 'GET',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            }
-        })
+        let response = await axios(base_url + '/retable/' + database.table_id)
         let columnsArr = [];
         response.data.data.columns.forEach(element => {
             columnsArr[element.title] = element.column_id;
         });
 
         //POST the product with column ids(mandatory)
-        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data', {
+        await axios(base_url + '/retable/' + database.table_id + '/data', {
             method: 'POST',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            },
             data: {
                 data: [{
                     columns: [
@@ -54,7 +45,7 @@ const createProduct = async (req, res) => {
         product.inventory = inventory;
         product.updated_at = time;
         product.created_at = time;
-        
+
         res.status(200).json(product);
     } catch (error) {
         console.log(error);
@@ -65,27 +56,16 @@ const createProduct = async (req, res) => {
 //Get products
 const getProducts = async (req, res) => {
     try {
-        const database = await accessDB();
-
+        const database = req.app.locals.database;
         //GET the retable and grab the column ids
-        let response = await axios(base_url + '/retable/' + database.table_id, {
-            method: 'GET',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            }
-        })
+        let response = await axios(base_url + '/retable/' + database.table_id)
         let columnsArr = [];
         response.data.data.columns.forEach(element => {
             columnsArr[element.column_id] = element.title;
         });
 
         //Get row values.
-        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data', {
-            method: 'GET',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            }
-        })
+        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data')
 
         let count = 0;
         let products = [];
@@ -125,7 +105,7 @@ const getProducts = async (req, res) => {
 
 //Get a product
 const getProduct = async (req, res) => {
-    const database = await accessDB();
+    const database = req.app.locals.database;
     const productId = req.params.productId;
 
     exists = await checkExist(database, productId);
@@ -133,37 +113,29 @@ const getProduct = async (req, res) => {
     if (exists.id != '') {
         res.status(200).json(exists)
     } else {
-        res.status(400).json('Could not found the product with productId: ' + productId);
+        res.status(404).json('Could not found the product with productId: ' + productId);
     }
 }
 
 //Update the product
 const updateProduct = async (req, res) => {
     try {
-        const database = await accessDB();
+        const database = req.app.locals.database;
         const { name, id, inventory } = req.body;
         const time = getTime();
 
         product = await checkExist(database, id, true);
 
         //GET the retable and grab the column ids
-        let response = await axios(base_url + '/retable/' + database.table_id, {
-            method: 'GET',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            }
-        })
+        let response = await axios(base_url + '/retable/' + database.table_id)
         let columnsArr = [];
         response.data.data.columns.forEach(element => {
             columnsArr[element.title] = element.column_id;
         });
 
         //Update the product
-        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data', {
+        await axios(base_url + '/retable/' + database.table_id + '/data', {
             method: 'PUT',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            },
             data: {
                 rows: [{
                     row_id: product.row_id,
@@ -190,17 +162,14 @@ const updateProduct = async (req, res) => {
 //Delete the product
 const deleteProduct = async (req, res) => {
     try {
-        const database = await accessDB();
+        const database = req.app.locals.database;
         const productId = req.params.productId;
 
         product = await checkExist(database, productId, true);
 
         //Delete the product
-        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data', {
+        await axios(base_url + '/retable/' + database.table_id + '/data', {
             method: 'DELETE',
-            headers: {
-                'ApiKey': process.env.API_KEY
-            },
             data: {
                 row_ids: [product.row_id]
             }
@@ -214,24 +183,14 @@ const deleteProduct = async (req, res) => {
 
 async function checkExist(database, productId, getRowId = false) {
     //GET the retable and grab the column ids
-    let response = await axios(base_url + '/retable/' + database.table_id, {
-        method: 'GET',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        }
-    })
+    let response = await axios(base_url + '/retable/' + database.table_id)
     let columnsArr = [];
     response.data.data.columns.forEach(element => {
         columnsArr[element.column_id] = element.title;
     });
 
     //Get row values.
-    let response2 = await axios(base_url + '/retable/' + database.table_id + '/data', {
-        method: 'GET',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        }
-    })
+    let response2 = await axios(base_url + '/retable/' + database.table_id + '/data')
 
     let product = { name: '', id: '', inventory: '', updated_at: '', created_at: '', };
     response2.data.data.rows.forEach(element => {

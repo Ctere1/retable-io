@@ -1,6 +1,7 @@
 const axios = require('axios');
 require('dotenv').config();
 const base_url = "https://api.retable.io/v1/public";
+axios.defaults.headers.common['ApiKey'] = process.env.API_KEY;
 
 const accessDB = async () => {
     try {
@@ -28,9 +29,6 @@ const accessDB = async () => {
 async function createWorkspace() {
     let response = await axios(base_url + '/workspace', {
         method: 'POST',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        },
         data: { name: 'Database', description: 'Database for stock management' }
     })
     console.log('Workspace: ' + response.data.data.name + ' created');
@@ -39,12 +37,7 @@ async function createWorkspace() {
 }
 
 async function getWorkspace() {
-    let response = await axios(base_url + '/workspace', {
-        method: 'GET',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        }
-    });
+    let response = await axios(base_url + '/workspace');
     let id = '';
     response.data.data.workspaces.forEach(element => {
         if (element.name == 'Database') {
@@ -57,9 +50,6 @@ async function getWorkspace() {
 async function createProject(workspace_id) {
     let response = await axios(base_url + '/workspace/' + workspace_id + '/project', {
         method: 'POST',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        },
         data: { name: 'DB PROJECT', description: 'Database project for stock management' }
     })
     console.log('Project: ' + response.data.data.name + ' created');
@@ -68,12 +58,7 @@ async function createProject(workspace_id) {
 }
 
 async function getProject(workspace_id) {
-    let response = await axios(base_url + '/workspace/' + workspace_id + '/project', {
-        method: 'GET',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        }
-    })
+    let response = await axios(base_url + '/workspace/' + workspace_id + '/project')
     let project_id = '';
     response.data.data.projects.forEach(element => {
         if (element.name == 'DB PROJECT') {
@@ -86,12 +71,7 @@ async function getProject(workspace_id) {
 
 async function createTable(project_id) {
     //GET PROJECT by project_id
-    let response = await axios(base_url + '/project/' + project_id, {
-        method: 'GET',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        }
-    })
+    let response = await axios(base_url + '/project/' + project_id)
     let retable_id = '';
     response.data.data.retables.forEach(element => {
         if (element.title == 'Retable 1') {
@@ -99,11 +79,8 @@ async function createTable(project_id) {
         }
     });
 
-    let response2 = await axios(base_url + '/retable/' + retable_id + '/column', {
+    await axios(base_url + '/retable/' + retable_id + '/column', {
         method: 'POST',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        },
         data: {
             columns: [
                 { "title": "Id", "type": "text" },
@@ -118,12 +95,7 @@ async function createTable(project_id) {
 
 async function getTable(project_id) {
     //GET PROJECT by project_id and add column to retable
-    let response = await axios(base_url + '/project/' + project_id, {
-        method: 'GET',
-        headers: {
-            'ApiKey': process.env.API_KEY
-        }
-    })
+    let response = await axios(base_url + '/project/' + project_id)
     let retable_id = '';
     response.data.data.retables.forEach(element => {
         if (element.title == 'Retable 1') {
