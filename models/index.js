@@ -1,29 +1,23 @@
 const axios = require('axios');
 require('dotenv').config();
-const base_url = "https://api.retable.io/v1/public";
+const base_url = process.env.BASE_URL;
 axios.defaults.headers.common['ApiKey'] = process.env.API_KEY;
 
 const accessDB = async () => {
-    try {
-        let retable = { workspace_id: '', project_id: '', table_id: '' };
-        retable.workspace_id = await getWorkspace()
+    process.env.WORKSPACE_ID = await getWorkspace()
 
-        if (retable.workspace_id != '') {
-            //Find the project and grab the project's table
-            retable.project_id = await getProject(retable.workspace_id);
-            retable.table_id = await getTable(retable.project_id);
-        } else {
-            //Create New Workscape-->Project-->Table
-            retable.workspace_id = await createWorkspace();
-            retable.project_id = await createProject(retable.workspace_id);
-            await createTable(retable.project_id);
-            retable.table_id = await getTable(retable.project_id);
-        }
-        //console.log(retable)
-        return retable;
-    } catch (error) {
-        console.error(error)
+    if (process.env.WORKSPACE_ID != '') {
+        //Find the project and grab the project's table
+        process.env.PROJECT_ID = await getProject();
+        process.env.PRODUCT_TABLE_ID = await getTable();
+    } else {
+        //Create New Workscape-->Project-->Table
+        process.env.WORKSPACE_ID = await createWorkspace();
+        process.env.PROJECT_ID = await createProject();
+        await createTable();
+        process.env.PRODUCT_TABLE_ID = await getTable();
     }
+
 }
 
 async function createWorkspace() {
@@ -33,7 +27,6 @@ async function createWorkspace() {
     })
     console.log('Workspace: ' + response.data.data.name + ' created');
     return response.data.data.id;
-    // console.error(error.response.statusText, error.response.status);
 }
 
 async function getWorkspace() {
@@ -47,18 +40,17 @@ async function getWorkspace() {
     return id;
 }
 
-async function createProject(workspace_id) {
-    let response = await axios(base_url + '/workspace/' + workspace_id + '/project', {
+async function createProject() {
+    let response = await axios(base_url + '/workspace/' + process.env.WORKSPACE_ID + '/project', {
         method: 'POST',
         data: { name: 'DB PROJECT', description: 'Database project for stock management' }
     })
     console.log('Project: ' + response.data.data.name + ' created');
     return response.data.data.id;
-    // console.error(error.response.statusText, error.response.status);
 }
 
-async function getProject(workspace_id) {
-    let response = await axios(base_url + '/workspace/' + workspace_id + '/project')
+async function getProject() {
+    let response = await axios(base_url + '/workspace/' + process.env.WORKSPACE_ID + '/project')
     let project_id = '';
     response.data.data.projects.forEach(element => {
         if (element.name == 'DB PROJECT') {
@@ -69,12 +61,12 @@ async function getProject(workspace_id) {
 }
 
 
-async function createTable(project_id) {
+async function createTable() {
     //GET PROJECT by project_id
-    let response = await axios(base_url + '/project/' + project_id)
+    let response = await axios(base_url + '/project/' + process.env.PROJECT_ID)
     let retable_id = '';
     response.data.data.retables.forEach(element => {
-        if (element.title == 'Retable 1') {
+        if (element.title == 'Retable 1') { //It creates "Retable 1" table as default while creating the project.
             retable_id = element.id;
         }
     });
@@ -93,9 +85,9 @@ async function createTable(project_id) {
     console.log('Columns: created');
 }
 
-async function getTable(project_id) {
+async function getTable() {
     //GET PROJECT by project_id and add column to retable
-    let response = await axios(base_url + '/project/' + project_id)
+    let response = await axios(base_url + '/project/' + process.env.PROJECT_ID)
     let retable_id = '';
     response.data.data.retables.forEach(element => {
         if (element.title == 'Retable 1') {

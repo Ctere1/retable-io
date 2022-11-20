@@ -1,239 +1,112 @@
-const base_url = "https://api.retable.io/v1/public";
-const axios = require('axios');
-axios.defaults.headers.common['ApiKey'] = process.env.API_KEY;
-require('dotenv').config();
+const { getFormattedTime } = require('../helpers/timeConvertion');
+const Product = require('../models/Product');
 
 //Create product with unique Id
 const createProduct = async (req, res) => {
     try {
-        const database = req.app.locals.database;
         const { name, id, inventory } = req.body;
-        const time = getTime();
+        const time = getFormattedTime();
 
         //Check ID (do not create duplicate product with same ID)
-        exists = await checkExist(database, id);
+        exists = await Product.get(id);
         if (exists.id != '') {
             res.status(400).json('Can not create the product with duplicate productId: ' + id);
             return;
         }
 
-        //GET the retable and grab the column ids
-        let response = await axios(base_url + '/retable/' + database.table_id)
-        let columnsArr = [];
-        response.data.data.columns.forEach(element => {
-            columnsArr[element.title] = element.column_id;
-        });
+        let product = {
+            name: name,
+            id: id,
+            inventory: inventory,
+            updated_at: time,
+            created_at: time
+        };
 
-        //POST the product with column ids(mandatory)
-        await axios(base_url + '/retable/' + database.table_id + '/data', {
-            method: 'POST',
-            data: {
-                data: [{
-                    columns: [
-                        { column_id: columnsArr['Name'], cell_data: name },
-                        { column_id: columnsArr['Id'], cell_data: id },
-                        { column_id: columnsArr['Inventory'], cell_data: inventory },
-                        { column_id: columnsArr['Updated_at'], cell_data: time },
-                        { column_id: columnsArr['Created_at'], cell_data: time }
-                    ]
-                }]
-            }
-        })
-        let product = {};
-        product.name = name;
-        product.id = id;
-        product.inventory = inventory;
-        product.updated_at = time;
-        product.created_at = time;
+        //DB save
+        await Product.create(product);
 
         res.status(200).json(product);
     } catch (error) {
         console.log(error);
-        res.status(400).json(error.message);
+        res.status(500).json(error.message);
     }
 }
 
 //Get products
 const getProducts = async (req, res) => {
     try {
-        const database = req.app.locals.database;
-        //GET the retable and grab the column ids
-        let response = await axios(base_url + '/retable/' + database.table_id)
-        let columnsArr = [];
-        response.data.data.columns.forEach(element => {
-            columnsArr[element.column_id] = element.title;
-        });
-
-        //Get row values.
-        let response2 = await axios(base_url + '/retable/' + database.table_id + '/data')
-
-        let count = 0;
-        let products = [];
-        response2.data.data.rows.forEach(element => {
-            let product = { name: '', id: '', inventory: '', updated_at: '', created_at: '', };
-            if (element.row_id !== 1) {
-                element.columns.forEach(column => {
-                    switch (columnsArr[column.column_id]) {
-                        case 'Id':
-                            product.id = column.cell_value;
-                            break;
-                        case 'Name':
-                            product.name = column.cell_value
-                            break;
-                        case 'Inventory':
-                            product.inventory = column.cell_value
-                            break;
-                        case 'Updated_at':
-                            product.updated_at = column.cell_value
-                            break;
-                        case 'Created_at':
-                            product.created_at = column.cell_value
-                            break;
-                    }
-                });
-                count++;
-                products.push(product);
-            }
-        });
-
-        res.status(200).json({ count: count, products: products })
+        result = await Product.getAll();
+        res.status(200).json({ count: result.count, products: result.products })
     } catch (error) {
         console.log(error);
-        res.status(400).json(error.message);
+        res.status(500).json(error.message);
     }
 }
 
 //Get a product
 const getProduct = async (req, res) => {
-    const database = req.app.locals.database;
-    const productId = req.params.productId;
+    try {
+        const productId = req.params.productId;
 
-    exists = await checkExist(database, productId);
+        product = await Product.get(productId);
 
-    if (exists.id != '') {
-        res.status(200).json(exists)
-    } else {
-        res.status(404).json('Could not found the product with productId: ' + productId);
+        if (product.id == '') {
+            res.status(404).json('Could not found the product with productId: ' + productId);
+            return;
+        }
+        res.status(200).json(product)
+    } catch (error) {
+        console.log(error);
+        res.status(500).json(error.message);
     }
 }
 
 //Update the product
 const updateProduct = async (req, res) => {
     try {
-        const database = req.app.locals.database;
         const { name, id, inventory } = req.body;
-        const time = getTime();
+        const time = getFormattedTime();
 
-        product = await checkExist(database, id, true);
-
-        //GET the retable and grab the column ids
-        let response = await axios(base_url + '/retable/' + database.table_id)
-        let columnsArr = [];
-        response.data.data.columns.forEach(element => {
-            columnsArr[element.title] = element.column_id;
-        });
-
-        //Update the product
-        await axios(base_url + '/retable/' + database.table_id + '/data', {
-            method: 'PUT',
-            data: {
-                rows: [{
-                    row_id: product.row_id,
-                    columns: [
-                        { column_id: columnsArr['Name'], update_cell_data: name },
-                        { column_id: columnsArr['Inventory'], update_cell_data: inventory },
-                        { column_id: columnsArr['Updated_at'], update_cell_data: time }
-                    ]
-                }]
-            }
-        });
+        product = await Product.get(id, true);
+        if (product.id == '') {
+            res.status(404).json('Could not find product with productId: ' + id);
+            return;
+        }
+        product.updated_at = time;
         product.name = name;
-        product.id = id;
         product.inventory = inventory;
+
+        //DB update
+        await Product.update(product);
+
         delete product.row_id;
 
         res.status(200).json(product);
     } catch (error) {
         console.log(error);
-        res.status(400).json(error.message);
+        res.status(500).json(error.message);
     }
 }
 
 //Delete the product
 const deleteProduct = async (req, res) => {
     try {
-        const database = req.app.locals.database;
         const productId = req.params.productId;
 
-        product = await checkExist(database, productId, true);
+        product = await Product.get(productId, true);
+        if (product.id == '') {
+            res.status(404).json('Could not find prdouct with productId: ' + id);
+            return;
+        }
 
-        //Delete the product
-        await axios(base_url + '/retable/' + database.table_id + '/data', {
-            method: 'DELETE',
-            data: {
-                row_ids: [product.row_id]
-            }
-        });
+        //DB delete
+        await Product.delete(product);
+
         res.status(200).json(`Product: '${productId}' deleted.`);
     } catch (error) {
         console.log(error);
-        res.status(400).json(error.message);
+        res.status(500).json(error.message);
     }
-}
-
-async function checkExist(database, productId, getRowId = false) {
-    //GET the retable and grab the column ids
-    let response = await axios(base_url + '/retable/' + database.table_id)
-    let columnsArr = [];
-    response.data.data.columns.forEach(element => {
-        columnsArr[element.column_id] = element.title;
-    });
-
-    //Get row values.
-    let response2 = await axios(base_url + '/retable/' + database.table_id + '/data')
-
-    let product = { name: '', id: '', inventory: '', updated_at: '', created_at: '', };
-    response2.data.data.rows.forEach(element => {
-        element.columns.forEach(column => {
-            switch (columnsArr[column.column_id]) {
-                case 'Id':
-                    if (column.cell_value == productId) {
-                        product.id = column.cell_value
-                        if (getRowId) {
-                            product.row_id = element.row_id
-                        }
-                    };
-                    break;
-                case 'Name':
-                    product.name = column.cell_value
-                    break;
-                case 'Inventory':
-                    product.inventory = column.cell_value
-                    break;
-                case 'Updated_at':
-                    product.updated_at = column.cell_value
-                    break;
-                case 'Created_at':
-                    product.created_at = column.cell_value
-                    break;
-            }
-        });
-    });
-    return product;
-}
-
-function getTime() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    let mm = today.getMonth() + 1; // Months start at 0!
-    let dd = today.getDate();
-    let n = today.toLocaleTimeString();
-
-    if (dd < 10) dd = '0' + dd;
-    if (mm < 10) mm = '0' + mm;
-
-    const formattedToday = dd + '/' + mm + '/' + yyyy + ' ' + n;
-    return formattedToday;
 }
 
 module.exports = { createProduct, updateProduct, deleteProduct, getProduct, getProducts }
