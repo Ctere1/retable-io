@@ -95,7 +95,7 @@ const deleteProduct = async (req, res) => {
 
         product = await Product.get(productId, true);
         if (product.id == '') {
-            res.status(404).json('Could not find prdouct with productId: ' + id);
+            res.status(404).json('Could not find product with productId: ' + id);
             return;
         }
 
