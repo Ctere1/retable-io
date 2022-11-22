@@ -15,15 +15,15 @@
 ## Features
 Stock Management API that uses [Retable-io](https://www.retable.io/) as database. You can:
 * Create a Product
-  - Create a product with unique "id" (mandatory), "name" and "inventory". API does not allow to create duplicate product with same "id".
+  - Create a product with unique `id` (**mandatory**), `name` and `inventory`. API does not allow to create duplicate product with same `id`.
 * Update a product
-  - Update the product's "name" and "inventory". "id" is mandatory to update the product. "id" can not be updated.
+  - Update the product's `name` and `inventory`. `id` is mandatory to update the product. `id` can not be updated.
 * Get all products  
   - Returns all the products array with product count.
 * Get a single product
-  - Returns a single product object by "id".
+  - Returns a single product object by `id`.
 * Delete a product
-  - Delete a product by "id".
+  - Delete a product by `id`.
 
 ## How To Use
 
@@ -39,7 +39,7 @@ $ npm install
 # Run the app
 $ npm start
 ```
-** Before these steps, do not forget to get **[Retable-io](https://www.retable.io/)** *API_KEY* and add *API_KEY* into ".env" file. Also check postman collection for testing.
+> Before these steps, do not forget to get **[Retable-io](https://www.retable.io/)** `API_KEY` and add `API_KEY` into `.env` file. Also check postman collection for testing.
 ## Credits
 
 This software uses the following open source packages:

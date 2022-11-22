@@ -25,7 +25,7 @@ const createProduct = async (req, res) => {
         //DB save
         await Product.create(product);
 
-        res.status(200).json(product);
+        res.status(201).json(product);
     } catch (error) {
         console.log(error);
         res.status(500).json(error.message);
